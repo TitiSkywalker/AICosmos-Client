@@ -111,7 +111,7 @@ class AICosmosClient:
     def get_session_history(self, session_id: str):
         session, message = self._get_session_status(session_id)
         if not session:
-            return None, message
+            return [], message
         else:
             return session.get("conversation", []), message
 
@@ -132,6 +132,6 @@ class AICosmosClient:
             if success:
                 return response.json()["conversation_history"], "Success"
             else:
-                return None, f"Status code: {response.status_code}"
+                return [], f"Status code: {response.status_code}"
         except Exception as e:
-            return None, f"Error: {e}"
+            return [], f"Error: {e}"
