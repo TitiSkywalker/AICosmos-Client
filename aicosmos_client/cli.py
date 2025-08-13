@@ -18,7 +18,7 @@ from textual.widgets import (
     RichLog,
     Static,
 )
-from client import AICosmosClient
+from .client import AICosmosClient
 
 
 class LoginScreen(Screen):
