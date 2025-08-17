@@ -1,24 +1,14 @@
 import asyncio
 from typing import Dict
 
+from client import AICosmosClient
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.screen import Screen
-from textual.widgets import (
-    Button,
-    Footer,
-    Header,
-    Input,
-    Label,
-    ListItem,
-    ListView,
-    LoadingIndicator,
-    RichLog,
-    Static,
-)
-from .client import AICosmosClient
+from textual.widgets import (Button, Footer, Header, Input, Label, ListItem,
+                             ListView, LoadingIndicator, RichLog, Static)
 
 
 class LoginScreen(Screen):
@@ -178,7 +168,7 @@ class SessionScreen(Screen):
         self.query_one("#session-list").clear()
         self.sessions, message = self.app.client.get_my_sessions()
 
-        if message != "success":
+        if message != "Success":
             self.query_one("#session-list").append(
                 ListItem(Label(f"{message}"), id="no-sessions")
             )
@@ -193,9 +183,9 @@ class SessionScreen(Screen):
         for session in self.sessions:
             session_id = session["session_id"]
             clean_id = self.sanitize_id(session_id)
-            title = session["environment_info"].get(
-                "title", f"Session {session_id[:6]}"
-            )
+            title = session["title"]
+            if not title:
+                title = f"Session {session_id[:6]}"
             self.query_one("#session-list").append(
                 ListItem(Label(title), id=f"session-{clean_id}")
             )
@@ -203,7 +193,7 @@ class SessionScreen(Screen):
     @on(Button.Pressed, "#create-session")
     @work(exclusive=True)
     async def create_session(self) -> None:
-        session_id = self.app.client.create_session()
+        session_id, message = self.app.client.create_session()
 
         if session_id:
             self.app.current_session = session_id
@@ -211,7 +201,7 @@ class SessionScreen(Screen):
             self.app.install_screen(ChatScreen(), "chat")
             self.app.push_screen("chat")
         else:
-            self.query_one("#session-error").update("Failed to create session")
+            self.query_one("#session-error").update(f"Failed to create session: {message}")
 
     @on(ListView.Selected)
     def session_selected(self, event: ListView.Selected) -> None:
@@ -402,7 +392,7 @@ class ChatScreen(Screen):
         self.conversation, message = self.app.client.get_session_history(
             self.app.current_session
         )
-        if message != "success":
+        if message != "Success":
             self.query_one("#chat-log").write(f"[red]Error: {message}[/red]")
             return
         self.update_message_display()
@@ -437,7 +427,7 @@ class ChatScreen(Screen):
                 self.app.client.chat, self.app.current_session, message
             )
 
-            if message != "success":
+            if message != "Success":
                 self.query_one("#chat-log").write(f"[red]Error: {message}[/red]")
                 return
             new_messages = conversation_history[len(self.conversation) :]
