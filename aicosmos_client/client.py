@@ -99,7 +99,7 @@ class AICosmosClient:
                 return [
                     {
                         "session_id": session["session_id"],
-                        "title": session["environment_info"].get("title", "unknown"),
+                        "title": session["environment_info"].get("title", None),
                     }
                     for session in sessions
                 ], "Success"
