@@ -7,8 +7,18 @@ from textual.app import App, ComposeResult
 from textual.containers import Container
 from textual.reactive import reactive
 from textual.screen import Screen
-from textual.widgets import (Button, Footer, Header, Input, Label, ListItem,
-                             ListView, LoadingIndicator, RichLog, Static)
+from textual.widgets import (
+    Button,
+    Footer,
+    Header,
+    Input,
+    Label,
+    ListItem,
+    ListView,
+    LoadingIndicator,
+    RichLog,
+    Static,
+)
 
 
 class LoginScreen(Screen):
@@ -166,11 +176,11 @@ class SessionScreen(Screen):
     @work(exclusive=True)
     async def load_sessions(self) -> None:
         self.query_one("#session-list").clear()
-        self.sessions, message = self.app.client.get_my_sessions()
-
-        if message != "Success":
+        try:
+            self.sessions = self.app.client.get_my_sessions()
+        except Exception as e:
             self.query_one("#session-list").append(
-                ListItem(Label(f"{message}"), id="no-sessions")
+                ListItem(Label(f"Failed: {e}"), id="no-sessions")
             )
             return
 
@@ -193,15 +203,16 @@ class SessionScreen(Screen):
     @on(Button.Pressed, "#create-session")
     @work(exclusive=True)
     async def create_session(self) -> None:
-        session_id, message = self.app.client.create_session()
+        try:
+            session_id = self.app.client.create_session()
+        except Exception as e:
+            self.query_one("#session-error").update(f"Failed to create session: {e}")
+            return
 
-        if session_id:
-            self.app.current_session = session_id
-            self.app.uninstall_screen("chat")
-            self.app.install_screen(ChatScreen(), "chat")
-            self.app.push_screen("chat")
-        else:
-            self.query_one("#session-error").update(f"Failed to create session: {message}")
+        self.app.current_session = session_id
+        self.app.uninstall_screen("chat")
+        self.app.install_screen(ChatScreen(), "chat")
+        self.app.push_screen("chat")
 
     @on(ListView.Selected)
     def session_selected(self, event: ListView.Selected) -> None:
@@ -389,11 +400,12 @@ class ChatScreen(Screen):
     @work(exclusive=True)
     async def load_conversation(self) -> None:
         """Fetch conversation history"""
-        self.conversation, message = self.app.client.get_session_history(
-            self.app.current_session
-        )
-        if message != "Success":
-            self.query_one("#chat-log").write(f"[red]Error: {message}[/red]")
+        try:
+            self.conversation = self.app.client.get_session_history(
+                self.app.current_session
+            )
+        except Exception as e:
+            self.query_one("#chat-log").write(f"[red]Error: {e}[/red]")
             return
         self.update_message_display()
 
@@ -423,12 +435,12 @@ class ChatScreen(Screen):
         send_button.disabled = True
 
         try:
-            conversation_history, message = await asyncio.to_thread(
-                self.app.client.chat, self.app.current_session, message
-            )
-
-            if message != "Success":
-                self.query_one("#chat-log").write(f"[red]Error: {message}[/red]")
+            try:
+                conversation_history = await asyncio.to_thread(
+                    self.app.client.chat, self.app.current_session, message
+                )
+            except Exception as e:
+                self.query_one("#chat-log").write(f"[red]Error: {e}[/red]")
                 return
             new_messages = conversation_history[len(self.conversation) :]
             for msg in new_messages:

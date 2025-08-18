@@ -9,9 +9,7 @@ class AICosmosClient:
         self.password: str = password
         self.access_token: str = None
 
-        login, message = self._login()
-        if not login:
-            raise ValueError(f"Failed to login. {message}")
+        self._login()
 
     def _login(self):
         login_data = {
@@ -27,11 +25,11 @@ class AICosmosClient:
             if response.status_code == 200:
                 token_data = response.json()
                 self.access_token = token_data["access_token"]
-                return True, "Success"
+                return
             else:
-                return False, f"Status code: {response.status_code}"
+                raise ValueError(f"Status code: {response.status_code}")
         except Exception as e:
-            return False, f"Error: {e}"
+            raise ValueError(f"Error: {e}")
 
     def _get_auth_headers(self):
         if not self.access_token:
@@ -49,11 +47,11 @@ class AICosmosClient:
             )
             success = response.status_code == 200
             if success:
-                return response.json(), "Success"
+                return response.json()
             else:
-                return None, f"Status code: {response.status_code}"
+                raise ValueError(f"Status code: {response.status_code}")
         except Exception as e:
-            return None, f"Error: {e}"
+            raise ValueError(f"Error: {e}")
 
     def create_session(self):
         if not self.access_token:
@@ -64,11 +62,11 @@ class AICosmosClient:
             )
             if response.status_code == 200:
                 response_json = response.json()
-                return response_json["session_id"], "Success"
+                return response_json["session_id"]
             else:
-                return None, f"Status code: {response.status_code}"
+                raise ValueError(f"Status code: {response.status_code}")
         except Exception as e:
-            return None, f"Error: {e}"
+            raise ValueError(f"Error: {e}")
 
     def delete_session(self, session_id: str):
         if not self.access_token:
@@ -79,11 +77,11 @@ class AICosmosClient:
                 headers=self._get_auth_headers(),
             )
             if response.status_code == 200:
-                return True, "Success"
+                return
             else:
-                return False, f"Status code: {response.status_code}"
+                raise ValueError(f"Status code: {response.status_code}")
         except Exception as e:
-            return False, f"Error: {e}"
+            raise ValueError(f"Error: {e}")
 
     def get_my_sessions(self):
         if not self.access_token:
@@ -102,18 +100,15 @@ class AICosmosClient:
                         "title": session["environment_info"].get("title", None),
                     }
                     for session in sessions
-                ], "Success"
+                ]
             else:
-                return None, f"Status code: {response.status_code}"
+                raise ValueError(f"Status code: {response.status_code}")
         except Exception as e:
-            return None, f"Error: {e}"
+            raise ValueError(f"Error: {e}")
 
     def get_session_history(self, session_id: str):
-        session, message = self._get_session_status(session_id)
-        if not session:
-            return [], message
-        else:
-            return session.get("conversation", []), message
+        session = self._get_session_status(session_id)
+        return session.get("conversation", [])
 
     def chat(self, session_id: str, prompt: str):
         if not self.access_token:
@@ -130,8 +125,8 @@ class AICosmosClient:
             )
             success = response.status_code == 200
             if success:
-                return response.json()["conversation_history"], "Success"
+                return response.json()["conversation_history"]
             else:
-                return [], f"Status code: {response.status_code}"
+                raise ValueError(f"Status code: {response.status_code}")
         except Exception as e:
-            return [], f"Error: {e}"
+            raise ValueError(f"Error: {e}")
