@@ -12,7 +12,10 @@ from aicosmos_client.client import AICosmosClient
 
 # login
 client = AICosmosClient(
-    base_url="http://xxx.xxx", username="xxx", password="xxxxxx"
+    base_url="https://aicosmos.ai/api",
+    username="xxx",
+    password="xxx",
+    auto_trust=True,
 )
 
 # create a new session
@@ -46,5 +49,6 @@ To show that the client is enough to build an application, we offer you an comma
 ```Python
 from aicosmos_client.cli import AICosmosCLI
 
+# url: https://aicosmos.ai/api
 AICosmosCLI().run()
 ```
