@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 
 import certifi
 import requests
+from platformdirs import user_config_dir
 from requests.adapters import HTTPAdapter
 
 
@@ -47,11 +48,14 @@ class AICosmosClient:
         self.auto_trust = auto_trust
 
         host = urlparse(self.base_url).hostname
-        self.certs_dir = certs_dir or os.path.join(
-            os.path.expanduser("~"), ".aicosmos", "certs"
-        )
-        os.makedirs(self.certs_dir, exist_ok=True)
-        self.cert_file = os.path.join(self.certs_dir, f"{host}.pem")
+
+        # Use platformdirs if no explicit certs_dir
+        if certs_dir is None:
+            config_dir = user_config_dir("aicosmos", "AICosmos")
+            certs_dir = os.path.join(config_dir, "certs")
+
+        os.makedirs(certs_dir, exist_ok=True)
+        self.cert_file = os.path.join(certs_dir, f"{host}.pem")
 
         self.session = requests.Session()
         self.session.mount("https://", SSLAdapter(cafile=self.cert_file))

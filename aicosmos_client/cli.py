@@ -1,7 +1,6 @@
 import asyncio
 from typing import Dict
 
-from client import AICosmosClient
 from textual import on, work
 from textual.app import App, ComposeResult
 from textual.containers import Container
@@ -19,6 +18,8 @@ from textual.widgets import (
     RichLog,
     Static,
 )
+
+from client import AICosmosClient
 
 
 class LoginScreen(Screen):
